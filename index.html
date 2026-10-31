@@ -305,10 +305,32 @@ function maxPoints(q){return q.kind==="tf"?q.items.length:1}
 function earnedPoints(q,r){if(!r)return 0;return q.kind==="tf"?r.parts.filter(Boolean).length:(r.correct?1:0)}
 function scoreNow(){return activeSet.questions.reduce((a,q,i)=>a+earnedPoints(q,results[i]),0)}
 function totalPoints(){return activeSet.questions.reduce((a,q)=>a+maxPoints(q),0)}
+
+function openInfo(q){
+ const content=q.context || q.passage || q.prompt || "Đề không lưu đoạn dẫn chi tiết cho câu này.";
+ $("infoTitle").textContent="Đọc thông tin";
+ $("infoContent").innerHTML=`<div class="info-text">${esc(content)}</div>`;
+ $("infoModal").classList.add("open");
+ $("infoModal").setAttribute("aria-hidden","false");
+}
+function closeInfo(){
+ $("infoModal").classList.remove("open");
+ $("infoModal").setAttribute("aria-hidden","true");
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeInfo()});
+
 function renderQuestion(){
  const qs=activeSet.questions,q=qs[current],draft=drafts[current],res=results[current];
  $("qKicker").textContent=`CÂU ${current+1} / ${qs.length} · ${q.kind==="mcq"?"TRẮC NGHIỆM":q.kind==="tf"?"ĐÚNG / SAI":"TRẢ LỜI NGẮN"}`;
  $("qPrompt").textContent=q.prompt;
+ const oldInfoBtn=$("readInfoBtn"); if(oldInfoBtn) oldInfoBtn.remove();
+ if(/^Đọc thông tin/i.test(q.prompt||"")){
+  const infoBtn=document.createElement("button");
+  infoBtn.id="readInfoBtn"; infoBtn.className="read-info-btn"; infoBtn.type="button";
+  infoBtn.textContent="📖 Đọc thông tin";
+  infoBtn.onclick=()=>openInfo(q);
+  $("qPrompt").insertAdjacentElement("afterend",infoBtn);
+ }
  $("progressBar").style.width=((current+1)/qs.length*100)+"%";
  $("liveScore").textContent=`${scoreNow()} / ${totalPoints()} điểm`;
  $("qNav").innerHTML=qs.map((_,i)=>`<button class="q-dot ${i===current?"active":""} ${results[i]?"done":""}" onclick="jumpQuestion(${i})">${i+1}</button>`).join("");
@@ -396,4 +418,27 @@ function finishQuiz(){
 function retryQuiz(){startQuiz()}
 buildHome();
 </script>
+
+<div id="infoModal" class="info-modal" aria-hidden="true">
+  <div class="info-backdrop" onclick="closeInfo()"></div>
+  <section class="info-panel" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <button class="info-close" type="button" onclick="closeInfo()" aria-label="Đóng">×</button>
+    <div class="info-eyebrow">THÔNG TIN CÂU HỎI</div>
+    <h2 id="infoTitle">Đọc thông tin</h2>
+    <div id="infoContent"></div>
+    <button class="info-return" type="button" onclick="closeInfo()">Quay lại câu hỏi</button>
+  </section>
+</div>
+<style>
+.info-modal{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:18px}
+.info-modal.open{display:flex}.info-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}
+.info-panel{position:relative;width:min(620px,100%);max-height:85vh;overflow:auto;background:#111d2d;color:#edf4ff;border:1px solid #34445c;border-radius:22px;padding:25px;box-shadow:0 24px 80px #0009}
+.info-close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:#dbe7f7;font-size:30px;cursor:pointer}
+.info-eyebrow{font-size:11px;letter-spacing:.12em;color:#8fb8ff;font-weight:800;margin-bottom:8px}
+.info-panel h2{margin:0 34px 16px 0;font-size:23px}.info-text{line-height:1.7;white-space:pre-wrap;color:#d9e5f5}
+.info-return{margin-top:22px;border:0;border-radius:12px;padding:12px 16px;background:#8db8ff;color:#10213a;font-weight:800;cursor:pointer}
+.read-info-btn{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;border:1px solid #526985;border-radius:11px;padding:9px 13px;background:#17283d;color:#d9e9ff;font-weight:700;cursor:pointer}
+.read-info-btn:hover{background:#203852}
+</style>
+
 </body></html>
