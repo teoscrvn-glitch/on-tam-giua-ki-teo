@@ -294,7 +294,26 @@ function renderPrepare(){
  $("prepStats").innerHTML=`<div class="mini-stat"><b>${qs.length}</b> câu hỏi</div><div class="mini-stat"><b>${qs.filter(q=>q.kind==="mcq").length}</b> trắc nghiệm</div><div class="mini-stat"><b>${qs.filter(q=>q.kind==="tf").length}</b> câu đúng–sai</div><div class="mini-stat"><b>${qs.filter(q=>q.kind==="short").length}</b> trả lời ngắn</div>`;
  $("answerKey").innerHTML=`<div class="answer-group"><h3>Toàn bộ đáp án</h3>${qs.map(keyLine).join("")}</div>`;
 }
+function shuffleCopy(list){
+ const a=[...list];
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+ return a;
+}
+function makeShuffledQuestion(q){
+ const copy=JSON.parse(JSON.stringify(q));
+ if(copy.kind==="mcq"){
+  const pairs=copy.options.map((text,index)=>({text,correct:index===copy.correct}));
+  const mixed=shuffleCopy(pairs);
+  copy.options=mixed.map(x=>x.text);
+  copy.correct=mixed.findIndex(x=>x.correct);
+ }else if(copy.kind==="tf"){
+  copy.items=shuffleCopy(copy.items);
+ }
+ return copy;
+}
 function startQuiz(){
+ // Mỗi lượt làm bài dùng bản sao xáo trộn; dữ liệu gốc/đáp án không bị sửa.
+ activeSet={...activeSet,questions:shuffleCopy(activeSet.questions).map(makeShuffledQuestion)};
  current=0;drafts=activeSet.questions.map(q=>q.kind==="tf"?Array(q.items.length).fill(null):q.kind==="short"?"":null);
  results=activeSet.questions.map(()=>null);
  $("quizSubject").textContent=activeSubject.title;
